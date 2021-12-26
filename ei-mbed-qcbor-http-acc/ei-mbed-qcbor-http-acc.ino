@@ -20,14 +20,14 @@
    SOFTWARE.
 */
 
-// replace these accordingly
+// Config
 #define API_PATH      "http://ingestion.edgeimpulse.com/api/training/data"
 #define API_KEY       "<YOUR_API_KEY>"
 #define HMAC_KEY      "<YOUR_HMAC_KEY>"
 #define SSID_NET      "<YOUR_SSID>"
 #define PASSWORD      "<YOUR_PASSWORD>"
 
-#define SAMPLE_TIME   1 // seconds
+#define SAMPLE_TIME   1   // seconds
 #define SAMPLE_RATE   100 // Hz
 
 #include <stdio.h>
@@ -51,12 +51,19 @@
 
 CCS811 mySensor(CCS811_ADDR);
 
+// LED
+const int ledPin = 12;
+const int freq = 5000;
+const int ledChannel = 0;
+const int resolution = 8;
+
 void setup() {
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
 
   Serial.begin(115200);
 
-  Wire.begin(); //Inialize I2C Hardware
+  // Initialize air quality sensor
+  Wire.begin(); // Inialize I2C Hardware
   if (mySensor.begin() == false)
   {
     Serial.print("CCS811 error. Please check wiring. Freezing...");
@@ -75,6 +82,11 @@ void setup() {
   Serial.println("");
   Serial.println("WiFi connected");
 
+  // configure LED PWM functionalitites
+  ledcSetup(ledChannel, freq, resolution);
+
+  // attach the channel to the GPIO to be controlled
+  ledcAttachPin(ledPin, ledChannel);
 }
 
 void loop() {
@@ -115,7 +127,7 @@ void loop() {
     // The axes which you'll use. The units field needs to comply to SenML units (see https://www.iana.org/assignments/senml/senml.xhtml)
     { { "CO2", "ppm" }, { "TVOC", "ppb" } }
   };
-  
+
   // Place to write our data.
   memory_stream_t stream;
   stream.length = 0;
@@ -129,10 +141,12 @@ void loop() {
     Serial.printf("sensor_aq_init failed (%d)\n", res);
     while (1);
   }
-  
-  // Periodically call `sensor_aq_add_data` (every 10 ms. in this example) to append data
-  float values[SAMPLE_TIME * SAMPLE_RATE][3] = { 0 }; // 100Hz * 10 seconds
+
+  // Periodically call 'sensor_aq_add_data' (every 10 ms. in this example) to append data
+  float values[SAMPLE_TIME * SAMPLE_RATE][2] = { 0 }; // 100Hz * 1 seconds
   uint16_t values_ix = 0;
+
+  ledcWrite(ledChannel, 10);
 
   while (values_ix < 100) {
     uint64_t next_tick = micros() + SAMPLE_RATE * 10;
@@ -149,13 +163,13 @@ void loop() {
       Serial.printf("tvoc (%f)\n", values[values_ix][1]);
 
       values_ix++;
+      ledcWrite(ledChannel, values_ix);
 
       while (micros() < next_tick) {
         /* blocking loop */
       }
     }
   }
-
 
   for (size_t ix = 0; ix < sizeof(values) / sizeof(values[0]); ix++) {
     res = sensor_aq_add_data(&ctx, values[ix], 2);
@@ -200,6 +214,7 @@ void loop() {
   http.addHeader("x-label", "test");
 
   int httpCode = http.POST(stream.buffer, stream.length);
+  ledcWrite(ledChannel, 0);
 
   if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
     String payload = http.getString();
