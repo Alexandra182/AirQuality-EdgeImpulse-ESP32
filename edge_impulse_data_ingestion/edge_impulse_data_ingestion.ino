@@ -211,7 +211,8 @@ void loop() {
   http.addHeader("content-type", "application/cbor");
   http.addHeader("x-api-key",  API_KEY);
   http.addHeader("x-file-name", "embeddedtest");
-  http.addHeader("x-label", "test");
+  http.addHeader("x-label", "normal");
+  // http.addHeader("x-label", "anomaly");
 
   int httpCode = http.POST(stream.buffer, stream.length);
   ledcWrite(ledChannel, 0);
