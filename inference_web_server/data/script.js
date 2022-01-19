@@ -3,6 +3,7 @@
 // Get current sensor readings when the page loads
 window.addEventListener('load', getReadings);
 
+const inferenceElement = document.getElementById('inference');
 // Create air quality chart
 var chartT = new Highcharts.Chart({
   chart:{
@@ -27,16 +28,6 @@ var chartT = new Highcharts.Chart({
         symbol: 'square',
         radius: 3,
         fillColor: '#00A6A6',
-      }
-    },
-    {
-      name: 'Result',
-      type: 'line',
-      color: '#DA70D6',
-      marker: {
-        symbol: 'square',
-        radius: 3,
-        fillColor: '#DA70D6',
       }
     },
   ],
@@ -65,7 +56,7 @@ function plotAirQuality(jsonValue) {
   console.log(keys);
   console.log(keys.length);
 
-  for (var i = 0; i < keys.length; i++){
+  for (var i = 0; i < keys.length - 1; i++){
     var x = (new Date()).getTime();
     console.log(x);
     const key = keys[i];
@@ -89,6 +80,7 @@ function getReadings(){
       var myObj = JSON.parse(this.responseText);
       console.log(myObj);
       plotAirQuality(myObj);
+      inferenceElement.innerHTML = myObj.result;
     }
   };
   xhr.open("GET", "/readings", true);
@@ -117,5 +109,6 @@ if (!!window.EventSource) {
     var myObj = JSON.parse(e.data);
     console.log(myObj);
     plotAirQuality(myObj);
+    inferenceElement.innerHTML = myObj.result;
   }, false);
 }

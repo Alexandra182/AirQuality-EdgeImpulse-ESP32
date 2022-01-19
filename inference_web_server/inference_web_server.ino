@@ -19,7 +19,7 @@
 /*********************** Web Server **************************/
 
 const char* ssid = "<SSID>";
-const char* password = "<PASSWORD>";
+const char* password = "<PASS>";
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
@@ -46,12 +46,14 @@ size_t feature_ix = 0;
 
 /*********************** Functions **************************/
 
+float anomalyScore = 0;
+
 // Get Sensor Readings and return JSON object
 String getSensorReadings() {
   airQualitySensor.readAlgorithmResults();
   readings["co2"] = String(airQualitySensor.getCO2());
   readings["tvoc"] = String(airQualitySensor.getTVOC());
-  readings["result"] = String(0.96);
+  readings["result"] = String(anomalyScore);
 
   String jsonString = JSON.stringify(readings);
   Serial.println(jsonString);
@@ -167,6 +169,8 @@ void loop() {
       for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
         ei_printf("%s:\t%.5f\n", result.classification[ix].label, result.classification[ix].value);
       }
+
+      anomalyScore = result.classification[0].value;
 
       // reset features frame
       feature_ix = 0;
