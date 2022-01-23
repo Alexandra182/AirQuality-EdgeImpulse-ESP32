@@ -63,7 +63,7 @@ function plotAirQuality(jsonValue) {
     var y = Number(jsonValue[key]);
     console.log(y);
 
-    if(chartT.series[i].data.length > 40) {
+    if(chartT.series[i].data.length > 100) {
       chartT.series[i].addPoint([x, y], true, true, true);
     } else {
       chartT.series[i].addPoint([x, y], true, false, true);
